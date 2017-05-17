@@ -1,0 +1,15 @@
+#!/bin/bash
+
+get_de() {
+    echo "num;href;date;title"
+    seq ${2?need a chapter number} 100 | while read n; do
+        url="http://www.wuxiaworld.com/desolate-era-index/de-book-${1?need a book number}-chapter-${n}/"
+        doc=$(curl -f -s $url)
+        if [[ $? != 0 ]]; then break; fi
+        date=$(echo $doc | pup 'meta[itemprop=datePublished] attr{content}' | cut -d 'T' -f1)
+        title=$(echo $doc | pup '[itemprop=articleBody] p:nth-of-type(2) text{}' | cut -d '–' -f2  | awk '{$1=$1; print}')
+        echo "${n};${url};${date};${title}"
+    done
+}
+
+get_de $1 $2 | mlr --icsv --fs semicolon --ojson --jlistwrap cat | jq .

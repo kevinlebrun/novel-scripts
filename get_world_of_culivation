@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+http GET https://wwyxhqc.wordpress.com/%E4%BF%AE%E7%9C%9F%E4%B8%96%E7%95%8C-world-of-cultivation/table-of-contents/ | pup 'select[name=archive-dropdown] option json{}' | jq '.[] | {href: .value, raw_title: .text, date: .value | sub(".*/(?<year>[0-9]{4})/(?<month>[0-9]{2})/(?<day>[0-9]{2})/.*"; "\(.year)-\(.month)-\(.day)"), num: .value | capture("-(?<n>[0-9]+)/$") | .n }' | mlr --json --jlistwrap put '$title = sub($raw_title, ".*“(.*)”.*", "\1")' | jq '.' | mlr --json cut -x -f raw_title | jq . | mlr --json --jlistwrap filter '$num >= '${1:-0} | mlr --json --jlistwrap sort -n num | mlr --json --jlistwrap filter '$num < '${2:-1000} | jq .

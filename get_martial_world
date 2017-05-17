@@ -1,0 +1,15 @@
+#!/bin/bash
+
+get_martial_world() {
+    echo "num;href;date;title"
+    seq ${1?need a range start} ${2?need a range end} | while read n; do
+        url="http://www.wuxiaworld.com/martialworld-index/mw-chapter-${n}/"
+        doc=$(curl -f -s $url)
+        if [[ $? != 0 ]]; then break; fi
+        date=$(echo $doc | pup 'meta[itemprop=datePublished] attr{content}' | cut -d 'T' -f1)
+        title=$(echo $doc | pup '[itemprop=articleBody] p:nth-of-type(2) text{}' | cut -d '–' -f2  | awk '{$1=$1; print}')
+        echo "${n};${url};${date};${title}"
+    done
+}
+
+get_martial_world $1 $2 | mlr --icsv --fs semicolon --ojson --jlistwrap filter 'strlen($title) > 5' | jq .
