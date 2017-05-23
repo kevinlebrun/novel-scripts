@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -u
+
+# no more than 10 books
+
+get_issth() {
+    echo "num;href;date;title"
+    local book=1
+    while read n; do
+        url="http://www.wuxiaworld.com/issth-index/issth-book-${book}-chapter-${n}/"
+        doc=$(curl -f -s $url)
+        code=$?
+        if [[ $code != 0 ]] && [[ $book = 10 ]]; then
+            break
+        fi
+        if [[ $code != 0 ]]; then
+            book=$(($book + 1))
+            continue
+        fi
+        date=$(echo $doc | pup 'meta[itemprop=datePublished] attr{content}' | cut -d 'T' -f1)
+        title=$(echo $doc | pup '[itemprop=articleBody] p:nth-of-type(2) text{}' | awk '{$1=$1; print}')
+        if [[ $title =~ Click ]]; then
+            title=$(echo $doc | pup '[itemprop=articleBody] [style*="display"] p:nth-of-type(1) text{}' | awk '{$1=$1; print}')
+        fi
+        echo "${n};${url};${date};${title}"
+    done < <(seq ${1?need a range start} ${2?need a range end})
+}
+
+get_issth $1 $2 | mlr --icsv --fs semicolon --ojson --jlistwrap cat | jq .
