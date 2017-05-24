@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+curl -s https://www.webnovel.com/book/6831852902001105 | pup '#contentsModal > ul > li > a json{}' | jq '[.[] | {href: ("https:" + .href), title: .text | sub("^.*chapter.*:\\s+"; ""), num: .text | capture("^.*chapter\\s+(?<n>\\d+):.*$") | .n }]'
